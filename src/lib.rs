@@ -1,8 +1,9 @@
+use std::collections::{hash_map, HashMap};
 use std::env;
 use std::error::Error;
 use std::fs;
 
-// Some variables
+/// Some variables
 pub struct Config {
     pub query: String,
     pub file_path: String,
@@ -22,7 +23,7 @@ impl Config {
 
         // let ignore_case = env::var("IGNORE_CASE").map_or(false, |var| var.eq("1"));
         let ignore_case = Self::check_env("IGNORE_CASE")
-            || Self::check_args(args, &[String::from("-i"), String::from("--ignore-case")]);
+            || Self::check_options(args, &[String::from("-i"), String::from("--ignore-case")]);
 
         Ok(Config {
             query,
@@ -31,12 +32,36 @@ impl Config {
         })
     }
 
+    // NOTE: A rusty example
+    //
+    // pub fn from(args: &[String]) -> Result<Self, &'static str> {
+    //     let command: Vec<&String> = args.iter().filter(|arg_str|!arg_str.starts_with("-")).collect();
+    //     if command.len() < 3 {
+    //         return Err("not enough arguments");
+    //     }
+    //
+    //     let query = command[1].clone();
+    //     let file_path = command[2].clone();
+    //
+    //     // 查询是否忽略大小写
+    //     // 优先找环境变量 IGNORE_CASE
+    //     // 没有 IGNORE_CASE 环境变量，再查找命令行参数
+    //     let ignore_case = match env::var("IGNORE_CASE") {
+    //         Ok(flag) => flag != "0",
+    //         Err(_) => args.iter().any(|v| v == "-i" || v == "--ignore_case"),
+    //     };
+    //
+    //     Ok(Config{query, file_path, ignore_case})
+    // }
+
+    /// query: the first non-option argument
+    /// file_path: the second non-option argument
     pub fn get_query_and_file_path(args: &[String]) -> (String, String) {
         let mut query = String::new();
         let mut file_path = String::new();
 
         for arg in &args[1..] {
-            if Self::is_arg(arg) {
+            if Self::is_option(arg) {
                 continue;
             }
             if query.is_empty() {
@@ -50,18 +75,14 @@ impl Config {
         (query, file_path)
     }
 
-    pub fn is_arg(target: &str) -> bool {
-        target.len() > 1 && &target[..1] == "-"
+    /// Options are longer than 1 with - prefix
+    /// Example: -i --ignore-case
+    pub fn is_option(arg: &str) -> bool {
+        arg.len() > 1 && arg.starts_with('-')
     }
 
-    // Environment varibles
-    // Return true if it is not empty or none zero
-    pub fn check_env(variable: &str) -> bool {
-        let flag = env::var(variable).ok();
-        !matches!(flag.as_ref().map(String::as_ref), None | Some("0"))
-    }
-
-    pub fn check_args(args: &[String], targets: &[String]) -> bool {
+    /// Check whether specific arguments exist or not
+    pub fn check_options(args: &[String], targets: &[String]) -> bool {
         for target in targets {
             if args[1..].contains(target) {
                 return true;
@@ -71,8 +92,16 @@ impl Config {
     }
 
     // TODO:
-    pub fn check_args_and_get_value(_target: &str) -> Option<String> {
+    /// Check options and get there values, reture key-values
+    pub fn check_options_and_get_value(_target: &str) -> Option<HashMap<String, String>> {
         todo!()
+    }
+
+    /// Environment Varibles
+    /// Return true if it is not empty or non-zero
+    pub fn check_env(variable: &str) -> bool {
+        let flag = env::var(variable).ok();
+        !matches!(flag.as_ref().map(String::as_ref), None | Some("0"))
     }
 }
 
@@ -93,6 +122,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Return lines with specific query of contents, case sensitive
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let mut results = Vec::new();
 
@@ -105,6 +135,7 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     results
 }
 
+/// Return lines with specific query of contents, case sensitive
 pub fn _search2<'a>(query: &'a str, contents: &'a str) -> Vec<&'a str> {
     let mut results = Vec::new();
     contents
@@ -114,6 +145,7 @@ pub fn _search2<'a>(query: &'a str, contents: &'a str) -> Vec<&'a str> {
     results
 }
 
+/// Return lines with specific query of contents, case insensitive
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let query = query.to_lowercase();
     let mut results = Vec::new();
