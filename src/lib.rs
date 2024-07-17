@@ -36,7 +36,6 @@ impl Config {
         let mut file_path = String::new();
 
         for arg in &args[1..] {
-            dbg!(&arg);
             if Self::is_arg(arg) {
                 continue;
             }
