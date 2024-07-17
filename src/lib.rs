@@ -18,12 +18,11 @@ impl Config {
 
         // let query = args[1].clone();
         // let file_path = args[2].clone();
-
         let (query, file_path) = Self::get_query_and_file_path(args);
 
+        // let ignore_case = env::var("IGNORE_CASE").map_or(false, |var| var.eq("1"));
         let ignore_case = Self::check_env("IGNORE_CASE")
             || Self::check_args(args, &[String::from("-i"), String::from("--ignore-case")]);
-        // let ignore_case = env::var("IGNORE_CASE").map_or(false, |var| var.eq("1"));
 
         Ok(Config {
             query,
@@ -36,8 +35,9 @@ impl Config {
         let mut query = String::new();
         let mut file_path = String::new();
 
-        for arg in args {
-            if !Self::is_arg(arg) {
+        for arg in &args[1..] {
+            dbg!(&arg);
+            if Self::is_arg(arg) {
                 continue;
             }
             if query.is_empty() {
@@ -64,7 +64,7 @@ impl Config {
 
     pub fn check_args(args: &[String], targets: &[String]) -> bool {
         for target in targets {
-            if args.contains(target) {
+            if args[1..].contains(target) {
                 return true;
             }
         }
